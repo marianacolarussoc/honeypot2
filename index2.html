@@ -1,0 +1,844 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMS Dashboard</title>
+<style>
+:root {
+  --teal: #0F766E;
+  --teal-hover: #0D6B63;
+  --teal-light: #14B8A6;
+  --teal-bg: #F0FDFA;
+  --cream: #FFFBF0;
+  --gold: #B8860B;
+  --gold-border: #D4B483;
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  --border: #E5E7EB;
+  --border-light: #F3F4F6;
+  --bg: #F8FAFC;
+  --white: #FFFFFF;
+  --sidebar-width: 272px;
+  --header-height: 56px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow: 0 1px 4px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.14);
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text-primary);line-height:1.5;overflow-x:hidden}
+
+/* Header */
+.header{position:fixed;top:0;left:0;right:0;z-index:200;height:var(--header-height);background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px;box-shadow:var(--shadow-sm)}
+.header-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.05rem;color:var(--teal)}
+.header-logo svg{width:28px;height:28px}
+.header-title{color:var(--text-primary);font-weight:600;font-size:1rem}
+.header-title span{color:var(--teal)}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.refresh-info{font-size:.78rem;color:var(--text-muted);display:flex;align-items:center;gap:5px}
+.refresh-dot{width:7px;height:7px;border-radius:50%;background:#10B981;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.mobile-menu-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;color:var(--text-secondary)}
+
+/* Layout */
+.layout{display:flex;margin-top:var(--header-height);min-height:calc(100vh - var(--header-height))}
+
+/* Sidebar */
+.sidebar{width:var(--sidebar-width);flex-shrink:0;background:var(--white);border-right:1px solid var(--border);position:fixed;top:var(--header-height);left:0;bottom:0;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-search{padding:14px 14px 10px;border-bottom:1px solid var(--border-light);position:sticky;top:0;background:var(--white);z-index:1}
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none}
+.search-input{width:100%;padding:8px 10px 8px 34px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.84rem;color:var(--text-primary);background:var(--bg);outline:none;transition:border-color .15s,box-shadow .15s}
+.search-input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(15,118,110,.1)}
+.search-input::placeholder{color:var(--text-muted)}
+.sidebar-clear-btn{width:calc(100% - 28px);margin:8px 14px 2px;padding:6px;background:var(--teal-bg);border:1px solid rgba(15,118,110,.2);border-radius:var(--radius-sm);color:var(--teal);font-size:.78rem;cursor:pointer;font-weight:500;text-align:center;transition:background .15s;display:none}
+.sidebar-clear-btn:hover{background:#D0F5F0}
+.sidebar-clear-btn.visible{display:block}
+.sidebar-body{padding:8px 0 20px;flex:1}
+.industry-group{margin-bottom:2px}
+.industry-header{display:flex;align-items:center;justify-content:space-between;padding:7px 14px 7px 12px;cursor:pointer;user-select:none;transition:background .1s}
+.industry-header:hover{background:var(--border-light)}
+.industry-header-left{display:flex;align-items:center;gap:7px}
+.industry-chevron{color:var(--text-muted);transition:transform .2s;flex-shrink:0}
+.industry-group.open .industry-chevron{transform:rotate(90deg)}
+.industry-name{font-size:.78rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em}
+.industry-count{font-size:.72rem;color:var(--text-muted)}
+.company-list{display:none;padding:2px 0}
+.industry-group.open .company-list{display:block}
+.company-item{display:flex;align-items:center;justify-content:space-between;padding:6px 14px 6px 28px;cursor:pointer;transition:background .1s;gap:6px}
+.company-item:hover{background:var(--teal-bg)}
+.company-item.active{background:var(--teal-bg)}
+.company-item.active .company-item-name{color:var(--teal);font-weight:600}
+.company-item-name{font-size:.84rem;color:var(--text-primary);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.company-badge{background:var(--border);color:var(--text-secondary);font-size:.7rem;font-weight:600;padding:1px 6px;border-radius:99px;flex-shrink:0;min-width:20px;text-align:center}
+.company-item.active .company-badge{background:var(--teal);color:white}
+
+/* Main */
+.main{flex:1;margin-left:var(--sidebar-width);padding:24px;max-width:100%;min-height:calc(100vh - var(--header-height))}
+.main-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.main-title{font-size:1.1rem;font-weight:700;color:var(--text-primary)}
+.main-count{font-size:.82rem;color:var(--text-muted);margin-top:2px}
+
+/* Cards */
+.cards-grid{display:flex;flex-direction:column;gap:12px}
+.sms-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);padding:16px 18px;box-shadow:var(--shadow-sm);transition:box-shadow .15s,border-color .15s;animation:fadeSlideIn .2s ease}
+.sms-card:hover{box-shadow:var(--shadow);border-color:#D1D5DB}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap}
+.card-company{font-weight:700;font-size:.97rem;color:var(--text-primary)}
+.card-tags{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:.71rem;font-weight:600;white-space:nowrap}
+.tag-industry{background:var(--teal-bg);color:var(--teal)}
+.tag-audience{background:#EFF6FF;color:#2563EB}
+.card-date{font-size:.78rem;color:var(--text-muted);white-space:nowrap}
+.card-preview{font-size:.875rem;color:var(--text-secondary);line-height:1.55;margin-bottom:12px}
+.card-footer{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:var(--radius-sm);font-size:.8rem;font-weight:600;cursor:pointer;transition:all .15s;border:none;white-space:nowrap}
+.btn-primary{background:var(--teal);color:white}
+.btn-primary:hover{background:var(--teal-hover)}
+.btn-ghost{background:var(--bg);color:var(--text-secondary);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--border-light);color:var(--text-primary)}
+
+/* Skeleton */
+.skeleton{background:linear-gradient(90deg,#F0F0F0 25%,#E0E0E0 50%,#F0F0F0 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:4px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skeleton-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:12px}
+
+/* Empty State */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-muted)}
+.empty-state svg{margin:0 auto 12px;display:block}
+.empty-state h3{font-size:1rem;color:var(--text-secondary);margin-bottom:6px}
+.empty-state p{font-size:.84rem}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--white);border-radius:var(--radius-lg);width:100%;max-width:640px;box-shadow:var(--shadow-lg);transform:translateY(20px);transition:transform .2s;overflow:hidden}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.modal-title{font-size:1rem;font-weight:700}
+.modal-subtitle{font-size:.78rem;color:var(--text-muted);margin-top:2px}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;flex-shrink:0;line-height:1;transition:background .15s,color .15s}
+.modal-close:hover{background:var(--border-light);color:var(--text-primary)}
+.modal-body{padding:20px;max-height:60vh;overflow-y:auto}
+.transcript-message{margin-bottom:14px}
+.transcript-message .msg-role{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.msg-role.company{color:var(--teal)}
+.msg-role.customer{color:#6B7280}
+.msg-bubble{padding:10px 13px;border-radius:10px;font-size:.875rem;line-height:1.6;max-width:90%;white-space:pre-wrap}
+.msg-bubble.company{background:var(--teal-bg);color:var(--text-primary)}
+.msg-bubble.customer{background:var(--border-light);color:var(--text-primary);margin-left:auto}
+.transcript-full{font-size:.875rem;line-height:1.7;color:var(--text-primary);white-space:pre-wrap;background:var(--bg);border-radius:var(--radius-sm);padding:14px}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+
+/* Animations */
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Error banner */
+.error-banner{background:#FEF2F2;border:1px solid #FCA5A5;border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:16px;font-size:.84rem;color:#DC2626;display:flex;align-items:flex-start;gap:10px}
+.error-banner-actions{margin-top:8px;display:flex;gap:8px}
+.error-retry-btn{background:#DC2626;color:white;border:none;border-radius:var(--radius-sm);padding:5px 12px;font-size:.78rem;cursor:pointer;font-weight:600}
+.error-retry-btn:hover{background:#B91C1C}
+
+/* Sidebar skeleton */
+.sidebar-skel{padding:14px}
+.sidebar-skel-row{height:12px;margin-bottom:10px;border-radius:4px}
+
+/* Mobile */
+@media(max-width:768px){
+  .mobile-menu-btn{display:flex}
+  .sidebar{transform:translateX(-100%);transition:transform .25s ease;z-index:150}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:140}
+  .sidebar-backdrop.open{display:block}
+  .main{margin-left:0;padding:16px}
+  .modal-overlay{padding:20px 12px}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="header-logo">
+    <svg viewBox="0 0 28 28" fill="none">
+      <rect width="28" height="28" rx="7" fill="#0F766E"/>
+      <path d="M6 9h16M6 14h10M6 19h13" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>
+    <span class="header-title">SMS <span>Dashboard</span></span>
+  </div>
+  <div class="header-right">
+    <div class="refresh-info">
+      <div class="refresh-dot"></div>
+      <span id="refreshLabel">Loading…</span>
+    </div>
+    <!-- Switch to Email Dashboard -->
+    <a href="crm-email-dashboard/index.html"
+       style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;
+              border-radius:7px;background:#F0FDFA;border:1px solid #CCFBF1;
+              text-decoration:none;color:#0F766E;font-size:.78rem;font-weight:600;
+              transition:background .15s;white-space:nowrap;"
+       onmouseover="this.style.background='#CCFBF1'"
+       onmouseout="this.style.background='#F0FDFA'">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+      </svg>
+      Email Dashboard
+    </a>
+  </div>
+</header>
+
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-search">
+      <div class="search-wrap">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search companies, messages…" autocomplete="off">
+      </div>
+    </div>
+    <button class="sidebar-clear-btn" id="clearFilterBtn">✕ Clear filter</button>
+    <div class="sidebar-body" id="sidebarBody">
+      <div class="sidebar-skel" id="sidebarSkel">
+        <div class="sidebar-skel-row skeleton" style="width:55%"></div>
+        <div class="sidebar-skel-row skeleton" style="width:75%;margin-left:16px"></div>
+        <div class="sidebar-skel-row skeleton" style="width:45%;margin-left:16px"></div>
+        <div class="sidebar-skel-row skeleton" style="width:60%;margin-top:14px"></div>
+        <div class="sidebar-skel-row skeleton" style="width:80%;margin-left:16px"></div>
+        <div class="sidebar-skel-row skeleton" style="width:50%;margin-left:16px"></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="main-header">
+      <div>
+        <div class="main-title" id="mainTitle">SMS Messages</div>
+        <div class="main-count" id="mainCount">Loading…</div>
+      </div>
+    </div>
+
+    <div id="errorBanner" style="display:none;" class="error-banner">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div>
+        <span id="errorText"></span>
+        <div class="error-banner-actions">
+          <button class="error-retry-btn" id="retryBtn">Retry now</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="cardsContainer">
+      <!-- Hardcoded skeleton cards shown while data loads -->
+      <div id="skeletonCards">
+        <div class="skeleton-card">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+            <div class="skeleton" style="width:34%;height:16px"></div>
+            <div class="skeleton" style="width:16%;height:13px"></div>
+          </div>
+          <div class="skeleton" style="width:70%;height:13px;margin-bottom:7px"></div>
+          <div class="skeleton" style="width:100%;height:13px;margin-bottom:7px"></div>
+          <div class="skeleton" style="width:50%;height:13px;margin-bottom:14px"></div>
+          <div class="skeleton" style="width:140px;height:30px;border-radius:6px"></div>
+        </div>
+        <div class="skeleton-card">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+            <div class="skeleton" style="width:28%;height:16px"></div>
+            <div class="skeleton" style="width:16%;height:13px"></div>
+          </div>
+          <div class="skeleton" style="width:85%;height:13px;margin-bottom:7px"></div>
+          <div class="skeleton" style="width:100%;height:13px;margin-bottom:7px"></div>
+          <div class="skeleton" style="width:60%;height:13px;margin-bottom:14px"></div>
+          <div class="skeleton" style="width:140px;height:30px;border-radius:6px"></div>
+        </div>
+        <div class="skeleton-card">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+            <div class="skeleton" style="width:40%;height:16px"></div>
+            <div class="skeleton" style="width:16%;height:13px"></div>
+          </div>
+          <div class="skeleton" style="width:65%;height:13px;margin-bottom:7px"></div>
+          <div class="skeleton" style="width:100%;height:13px;margin-bottom:7px"></div>
+          <div class="skeleton" style="width:45%;height:13px;margin-bottom:14px"></div>
+          <div class="skeleton" style="width:140px;height:30px;border-radius:6px"></div>
+        </div>
+        <div class="skeleton-card">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+            <div class="skeleton" style="width:32%;height:16px"></div>
+            <div class="skeleton" style="width:16%;height:13px"></div>
+          </div>
+          <div class="skeleton" style="width:78%;height:13px;margin-bottom:7px"></div>
+          <div class="skeleton" style="width:100%;height:13px;margin-bottom:7px"></div>
+          <div class="skeleton" style="width:55%;height:13px;margin-bottom:14px"></div>
+          <div class="skeleton" style="width:140px;height:30px;border-radius:6px"></div>
+        </div>
+      </div>
+      <div class="cards-grid" id="cardsGrid"></div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-subtitle" id="modalSubtitle"></div>
+      </div>
+      <button class="modal-close" id="modalClose" aria-label="Close">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="modalCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Config ───────────────────────────────────────────────────────────────────
+const SMS_URL   = 'https://docs.google.com/spreadsheets/d/1QaLw_iyVNQgEHnGARKIEttw_ZvILMUheBzUeti_w3YA/gviz/tq?tqx=out:json&sheet=SMS';
+const CAT_URL   = 'https://docs.google.com/spreadsheets/d/1QaLw_iyVNQgEHnGARKIEttw_ZvILMUheBzUeti_w3YA/gviz/tq?tqx=out:json&sheet=Industry%20Categories';
+const REFRESH_MS    = 60000;
+
+// ── State ────────────────────────────────────────────────────────────────────
+let allRows        = [];   // each row has _uid (unique stable id), _company, _date, _message, _audience
+let columnHeaders  = [];
+let columnMap      = {};   // { company, date, message, audience } → col index
+let industryLookup = {};   // companyName → industryName
+let selectedCompany = null;
+let searchQuery    = '';
+let lastRefresh    = null;
+let refreshTimer   = null;
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+
+function isBoldCell(cell) {
+  if (!cell || !cell.p || !cell.p.style) return false;
+  const s = cell.p.style.toLowerCase().replace(/\s/g, '');
+  return s.includes('font-weight:bold');
+}
+
+function getCellValue(cell) {
+  if (!cell || cell.v === null || cell.v === undefined) return '';
+  return cell.v;
+}
+
+function parseGvizDate(v) {
+  if (!v) return null;
+  if (typeof v === 'string' && v.startsWith('Date(')) {
+    const parts = v.slice(5, -1).split(',').map(Number);
+    return new Date(parts[0], parts[1], parts[2] || 1);
+  }
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function formatDate(v) {
+  const d = parseGvizDate(v);
+  if (!d) return v ? String(v) : '';
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return mm + '/' + dd + '/' + d.getFullYear();
+}
+
+function formatDateLong(d) {
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function trunc(s, n) {
+  s = String(s || '').trim();
+  return s.length > n ? s.slice(0, n) + '…' : s;
+}
+
+function slug(s) {
+  return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '_');
+}
+
+// ── Data Fetching (JSONP — works from file:// without CORS issues) ────────────
+// The gviz API wraps its response in google.visualization.Query.setResponse().
+// Loading the URL as a <script> tag intercepts that call directly — no fetch needed.
+
+function fetchSheetJsonp(url) {
+  return new Promise(function(resolve, reject) {
+    var timer = setTimeout(function() {
+      reject(new Error('Request timed out — check your internet connection'));
+    }, 20000);
+
+    // Install global callback that gviz will invoke
+    window.google = window.google || {};
+    window.google.visualization = window.google.visualization || {};
+    window.google.visualization.Query = window.google.visualization.Query || {};
+    window.google.visualization.Query.setResponse = function(response) {
+      clearTimeout(timer);
+      if (response && response.status === 'error') {
+        var msg = response.errors && response.errors[0] ? response.errors[0].message : 'Spreadsheet error';
+        reject(new Error(msg));
+      } else {
+        resolve(response);
+      }
+    };
+
+    var script = document.createElement('script');
+    script.src = url + '&nocache=' + Date.now();
+    script.onerror = function() {
+      clearTimeout(timer);
+      document.head.removeChild(script);
+      reject(new Error('Could not reach Google Sheets — check your internet connection'));
+    };
+    script.onload = function() {
+      // Clean up script tag after execution
+      if (script.parentNode) document.head.removeChild(script);
+    };
+    document.head.appendChild(script);
+  });
+}
+
+async function fetchAllData() {
+  try {
+    document.getElementById('refreshLabel').textContent = 'Refreshing…';
+
+    // Sequential — only one gviz callback active at a time
+    const smsData = await fetchSheetJsonp(SMS_URL);
+    const catData = await fetchSheetJsonp(CAT_URL);
+
+    parseSmsData(smsData);
+    industryLookup = parseIndustryCategories(catData);
+
+    lastRefresh = new Date();
+    hideError();
+    render();
+    updateRefreshLabel();
+  } catch (err) {
+    console.error('[SMS Dashboard] Fetch error:', err);
+    showError(err.message);
+    if (allRows.length > 0) render();
+    updateRefreshLabel();
+  }
+}
+
+// ── Industry Categories ───────────────────────────────────────────────────────
+// The gviz JSON/HTML APIs strip bold styling for this sheet, so we detect
+// industry headers by their naming convention: every category name contains
+// " & " (e.g. "Health & Insurance", "Home Services & Security").
+// Company names in this sheet do not contain " & ".
+// Bold styling is also checked as a future-proof fallback.
+function parseIndustryCategories(data) {
+  const map = {};
+  if (!data || !data.table || !data.table.rows) return map;
+  let currentIndustry = 'Other';
+
+  for (const row of data.table.rows) {
+    if (!row.c || !row.c[0]) continue;
+    const cell  = row.c[0];
+    const val   = String(getCellValue(cell) || '').trim();
+
+    // Skip blank rows and the literal column-header row ("Categories")
+    if (!val || val.toLowerCase() === 'categories') continue;
+
+    // Industry headers always contain " & " in this sheet.
+    // Also honour explicit bold styling in case gviz ever returns it.
+    const isHeader = isBoldCell(cell) || val.includes(' & ');
+
+    if (isHeader) {
+      currentIndustry = val;
+    } else {
+      map[val] = currentIndustry;
+    }
+  }
+
+  console.log('[SMS Dashboard] Industry map:', Object.keys(map).length,
+    'companies across', new Set(Object.values(map)).size, 'industries');
+  return map;
+}
+
+// ── SMS Data ──────────────────────────────────────────────────────────────────
+function parseSmsData(data) {
+  if (!data || !data.table) return;
+
+  const cols = data.table.cols || [];
+  const rows = data.table.rows || [];
+
+  // Column headers from the sheet metadata
+  columnHeaders = cols.map(c => (c.label || c.id || '').trim());
+  columnMap = {};
+
+  // ── Step 1: Detect date column by TYPE (most reliable)
+  // This avoids false matches like "Date The formula for the brand is on cell D3…"
+  const dateIdx = cols.findIndex(c =>
+    c.type === 'date' || c.type === 'datetime' || c.type === 'timeofday'
+  );
+  if (dateIdx >= 0) columnMap.date = dateIdx;
+
+  // ── Step 2: Detect remaining columns by label with specificity scoring
+  // Score = 1000 − label.length → shorter, more specific labels win.
+  // Already-mapped column indices are excluded.
+  const taken = new Set(Object.values(columnMap));
+  const labelPatterns = {
+    company:  /company|brand|sender|advertiser/i,
+    message:  /message|body|sms|content|copy/i,
+    audience: /audience|list|segment|target|group/i,
+  };
+  const bestScore = { company: -Infinity, message: -Infinity, audience: -Infinity };
+
+  columnHeaders.forEach((h, i) => {
+    if (!h || taken.has(i)) return;
+    const trimmed = h.trim();
+    Object.entries(labelPatterns).forEach(([key, re]) => {
+      if (re.test(trimmed)) {
+        const score = 1000 - trimmed.length;   // shorter label = more specific
+        if (score > (bestScore[key] ?? -Infinity)) {
+          bestScore[key] = score;
+          columnMap[key] = i;
+        }
+      }
+    });
+  });
+
+  // ── Step 3: Positional fallbacks if nothing matched
+  if (!Object.prototype.hasOwnProperty.call(columnMap, 'company'))  columnMap.company  = 0;
+  if (!Object.prototype.hasOwnProperty.call(columnMap, 'date'))     columnMap.date     = 1;
+  if (!Object.prototype.hasOwnProperty.call(columnMap, 'message'))  columnMap.message  = 2;
+
+  console.log('[SMS Dashboard] Headers:', columnHeaders);
+  console.log('[SMS Dashboard] Column map:', columnMap);
+
+  // Build rows – _uid is the stable unique id for modal lookup
+  const built = rows.map((row, idx) => {
+    const c = row.c || [];
+    const obj = { _uid: idx };
+
+    columnHeaders.forEach((h, i) => {
+      if (h) obj[h] = getCellValue(c[i]);
+    });
+
+    obj._company  = String(getCellValue(c[columnMap.company])  || '').trim();
+    obj._date     = getCellValue(c[columnMap.date]);
+    obj._message  = String(getCellValue(c[columnMap.message])  || '').trim();
+    obj._audience = Object.prototype.hasOwnProperty.call(columnMap, 'audience')
+                    ? String(getCellValue(c[columnMap.audience]) || '').trim() : '';
+    return obj;
+  }).filter(r => r._company.length > 0);  // require a brand name
+
+  allRows = built;
+  console.log('[SMS Dashboard] Loaded', allRows.length, 'rows');
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function buildSidebar() {
+  // Count messages per company
+  const companyCount = {};
+  for (const r of allRows) {
+    if (!r._company) continue;
+    companyCount[r._company] = (companyCount[r._company] || 0) + 1;
+  }
+
+  // Apply search filter to sidebar counts
+  const q = searchQuery.toLowerCase();
+  const visibleCompanies = q
+    ? Object.keys(companyCount).filter(c =>
+        c.toLowerCase().includes(q) ||
+        (industryLookup[c] || '').toLowerCase().includes(q) ||
+        allRows.some(r => r._company === c && r._message.toLowerCase().includes(q))
+      )
+    : Object.keys(companyCount);
+
+  // Group by industry
+  const industries = {};
+  for (const company of visibleCompanies) {
+    const ind = industryLookup[company] || 'Other';
+    if (!industries[ind]) industries[ind] = [];
+    industries[ind].push({ name: company, count: companyCount[company] });
+  }
+
+  const sortedInds = Object.keys(industries).sort((a, b) =>
+    a === 'Other' ? 1 : b === 'Other' ? -1 : a.localeCompare(b)
+  );
+
+  let html = '';
+  for (const ind of sortedInds) {
+    const companies = industries[ind].sort((a, b) => b.count - a.count);
+    const total = companies.reduce((s, c) => s + c.count, 0);
+    const isOpen = selectedCompany
+      ? companies.some(c => c.name === selectedCompany)
+      : true;
+
+    html += '<div class="industry-group ' + (isOpen ? 'open' : '') + '" data-industry="' + esc(ind) + '">'
+      + '<div class="industry-header">'
+      + '<div class="industry-header-left">'
+      + '<svg class="industry-chevron" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>'
+      + '<span class="industry-name">' + esc(ind) + '</span>'
+      + '</div>'
+      + '<span class="industry-count">' + total + '</span>'
+      + '</div>'
+      + '<div class="company-list">'
+      + companies.map(c =>
+          '<div class="company-item' + (selectedCompany === c.name ? ' active' : '') + '" data-company="' + esc(c.name) + '">'
+          + '<span class="company-item-name" title="' + esc(c.name) + '">' + esc(c.name) + '</span>'
+          + '<span class="company-badge">' + c.count + '</span>'
+          + '</div>'
+        ).join('')
+      + '</div>'
+      + '</div>';
+  }
+
+  if (!html) {
+    html = '<div style="padding:20px;color:var(--text-muted);font-size:.84rem">No companies found</div>';
+  }
+
+  const body = document.getElementById('sidebarBody');
+  body.innerHTML = html;
+
+  // Wire up events
+  body.querySelectorAll('.industry-header').forEach(h => {
+    h.addEventListener('click', () => h.closest('.industry-group').classList.toggle('open'));
+  });
+  body.querySelectorAll('.company-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const co = item.dataset.company;
+      if (selectedCompany === co) {
+        clearFilter();
+      } else {
+        selectCompany(co);
+      }
+    });
+  });
+
+  document.getElementById('clearFilterBtn').classList.toggle('visible', !!selectedCompany);
+}
+
+// ── Filter & Select ───────────────────────────────────────────────────────────
+function getFilteredRows() {
+  let rows = allRows;
+  if (selectedCompany) {
+    rows = rows.filter(r => r._company === selectedCompany);
+  }
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    rows = rows.filter(r =>
+      r._company.toLowerCase().includes(q) ||
+      (industryLookup[r._company] || '').toLowerCase().includes(q) ||
+      r._message.toLowerCase().includes(q) ||
+      r._audience.toLowerCase().includes(q)
+    );
+  }
+  return rows;
+}
+
+function selectCompany(name) {
+  selectedCompany = name;
+  render();
+  closeMobileSidebar();
+}
+
+function clearFilter() {
+  selectedCompany = null;
+  render();
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  document.getElementById('skeletonCards').style.display = 'none';
+  buildSidebar();
+  renderCards();
+}
+
+function renderCards() {
+  const rows = getFilteredRows();
+  const grid = document.getElementById('cardsGrid');
+  const titleEl = document.getElementById('mainTitle');
+  const countEl = document.getElementById('mainCount');
+
+  if (selectedCompany) {
+    titleEl.textContent = selectedCompany;
+  } else if (searchQuery) {
+    titleEl.textContent = 'Search: "' + searchQuery + '"';
+  } else {
+    titleEl.textContent = 'All SMS Messages';
+  }
+  countEl.textContent = rows.length.toLocaleString() + ' message' + (rows.length !== 1 ? 's' : '');
+
+  if (rows.length === 0) {
+    grid.innerHTML = '<div class="empty-state">'
+      + '<svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color:var(--border)"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+      + '<h3>No messages found</h3>'
+      + '<p>' + (selectedCompany ? 'No SMS messages for ' + esc(selectedCompany) : 'Try adjusting your search or filter') + '</p>'
+      + '</div>';
+    return;
+  }
+
+  grid.innerHTML = rows.map(row => buildCard(row)).join('');
+
+  // Use _uid for stable modal lookup (not affected by filtering)
+  grid.querySelectorAll('.btn-view-conv').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const uid = +btn.dataset.uid;
+      const row = allRows.find(r => r._uid === uid);
+      if (row) openModal(row);
+    });
+  });
+}
+
+function buildCard(row) {
+  const industry = industryLookup[row._company] || 'Other';
+  const dateStr  = formatDate(row._date);
+  const preview  = trunc(row._message, 50);
+
+  return '<div class="sms-card">'
+    + '<div class="card-top">'
+    + '<div>'
+    + '<div class="card-company">' + esc(row._company) + '</div>'
+    + '<div class="card-tags">'
+    + '<span class="tag tag-industry">' + esc(industry) + '</span>'
+    + (row._audience ? '<span class="tag tag-audience">' + esc(trunc(row._audience, 30)) + '</span>' : '')
+    + '</div>'
+    + '</div>'
+    + '<div class="card-date">' + esc(dateStr) + '</div>'
+    + '</div>'
+    + '<div class="card-preview">' + esc(preview) + '</div>'
+    + '<div class="card-footer">'
+    + '<button class="btn btn-primary btn-view-conv" data-uid="' + row._uid + '">'
+    + '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+    + 'View Full Conversation'
+    + '</button>'
+    + '</div>'
+    + '</div>';
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function openModal(row) {
+  document.getElementById('modalTitle').textContent = row._company;
+  document.getElementById('modalSubtitle').textContent =
+    [formatDate(row._date), row._audience].filter(Boolean).join(' · ');
+
+  const body    = document.getElementById('modalBody');
+  const content = row._message || '';
+  const turns   = parseConversation(content, row._company);
+
+  if (turns.length > 1) {
+    body.innerHTML = turns.map(t =>
+      '<div class="transcript-message">'
+      + '<div class="msg-role ' + t.role + '">' + (t.role === 'company' ? esc(row._company) : 'Customer') + '</div>'
+      + '<div class="msg-bubble ' + t.role + '">' + esc(t.text) + '</div>'
+      + '</div>'
+    ).join('');
+  } else {
+    body.innerHTML = '<div class="transcript-full">' + esc(content) + '</div>';
+  }
+
+  // Extra metadata fields
+  const skipCols = new Set([columnMap.company, columnMap.date, columnMap.message, columnMap.audience]);
+  const extras = columnHeaders
+    .map((h, i) => ({ h, i }))
+    .filter(({ h, i }) => h && !skipCols.has(i) && row[h])
+    .map(({ h }) => '<span style="font-size:.78rem;color:var(--text-secondary)"><strong>' + esc(h) + ':</strong> ' + esc(String(row[h] || '')) + '</span>');
+
+  if (extras.length) {
+    body.innerHTML += '<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:5px">' + extras.join('') + '</div>';
+  }
+
+  document.getElementById('modalOverlay').classList.add('open');
+  document.addEventListener('keydown', onModalKeyDown);
+}
+
+function parseConversation(text, companyName) {
+  const lines = text.split('\n');
+  const turns = [];
+  let role = 'company';
+  let buf  = [];
+  const coPat  = new RegExp('^' + (companyName || '').split(/\s/)[0], 'i');
+  const custPat = /^(customer|you|reply|me)\s*:/i;
+
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) {
+      if (buf.length) { turns.push({ role, text: buf.join('\n') }); buf = []; }
+      continue;
+    }
+    if (coPat.test(t) && /^[A-Za-z].*:/.test(t)) {
+      if (buf.length) turns.push({ role, text: buf.join('\n') });
+      role = 'company'; buf = [t.replace(/^[^:]+:\s*/, '')]; continue;
+    }
+    if (custPat.test(t)) {
+      if (buf.length) turns.push({ role, text: buf.join('\n') });
+      role = 'customer'; buf = [t.replace(/^[^:]+:\s*/, '')]; continue;
+    }
+    buf.push(t);
+  }
+  if (buf.length) turns.push({ role, text: buf.join('\n') });
+  return turns.filter(t => t.text.trim());
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.removeEventListener('keydown', onModalKeyDown);
+}
+
+function onModalKeyDown(e) { if (e.key === 'Escape') closeModal(); }
+
+// ── UI Helpers ─────────────────────────────────────────────────────────────────
+function showError(msg) {
+  document.getElementById('errorText').textContent = 'Could not load data: ' + msg;
+  document.getElementById('errorBanner').style.display = 'flex';
+}
+function hideError() {
+  document.getElementById('errorBanner').style.display = 'none';
+}
+function updateRefreshLabel() {
+  const el = document.getElementById('refreshLabel');
+  if (!lastRefresh) { el.textContent = 'Loading…'; return; }
+  const s = Math.round((Date.now() - lastRefresh) / 1000);
+  el.textContent = s < 5 ? 'Just updated' : 'Updated ' + s + 's ago';
+}
+function closeMobileSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('open');
+}
+
+// ── Events ─────────────────────────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', function () {
+  searchQuery = this.value.trim();
+  if (allRows.length) render();
+});
+
+document.getElementById('clearFilterBtn').addEventListener('click', clearFilter);
+
+document.getElementById('retryBtn').addEventListener('click', fetchAllData);
+
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+document.getElementById('modalOverlay').addEventListener('click', function (e) {
+  if (e.target === this) closeModal();
+});
+
+document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarBackdrop').classList.toggle('open');
+});
+document.getElementById('sidebarBackdrop').addEventListener('click', closeMobileSidebar);
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+async function init() {
+  await fetchAllData();
+  // Auto-refresh every 60 s
+  refreshTimer = setInterval(fetchAllData, REFRESH_MS);
+  // Update the "Updated Xs ago" label every 10 s
+  setInterval(updateRefreshLabel, 10000);
+}
+
+init();
+</script>
+</body>
+</html>
